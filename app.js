@@ -72,8 +72,6 @@
   }
 
   function renderNav() {
-    if (state.screen === 'chat') { navEl.style.display = 'none'; return; }
-    navEl.style.display = '';
     const tabs = [
       ['discover', 'Discover', I.discover],
       ['matches', 'Matches', I.heart],
@@ -83,8 +81,8 @@
     const u = unreadTotal();
     navEl.innerHTML = tabs.map(([id, label, icon]) => `
       <button class="tab ${state.screen === id ? 'active' : ''}" data-tab="${id}">
+        ${icon}<span class="tab-label">${label}</span>
         ${id === 'matches' && u ? `<span class="badge">${u}</span>` : ''}
-        ${icon}<span>${label}</span>
       </button>`).join('');
   }
 
@@ -95,42 +93,39 @@
     const t = tone();
     const head = `
       <div class="topbar">
-        <div class="brandmark">
-          <div class="brand-logo">T</div>
-          <div>
-            <h1 style="font-size:22px">${t.discoverTitle}</h1>
-            <div class="sub">${t.discoverSub}</div>
-          </div>
+        <div>
+          <h1>${t.discoverTitle}</h1>
+          <div class="sub">${t.discoverSub}</div>
         </div>
         <button class="icon-btn" data-act="filters" aria-label="Filters">${I.slider}</button>
       </div>`;
 
     const d = deck();
     if (!d.length) {
-      return `<div class="screen discover">${head}
+      return `<div class="screen discover"><div class="col">${head}
         <div class="empty">
           <div class="emoji">🌅</div>
           <h3>${esc(t.emptyDeck)}</h3>
           <p>${esc(t.emptySub)}</p>
           <button class="btn" data-act="reset-deck" style="margin-top:8px">Reset the deck</button>
-        </div></div>`;
+        </div></div></div>`;
     }
 
-    if (state.discover === 'list') return `<div class="screen discover">${head}${renderPeopleList(d)}</div>`;
+    if (state.discover === 'list') return `<div class="screen discover"><div class="col col-wide">${head}${renderPeopleList(d)}</div></div>`;
 
     const stack = d.slice(0, 3).map((p, depth) => cardHTML(p, depth)).reverse().join('');
     return `
-      <div class="screen discover">
+      <div class="screen discover"><div class="col">
         ${head}
-        <div class="deck"><div class="deck-stage" id="stage">${stack}</div></div>
+        <div class="deck-area"><div class="deck"><div class="deck-stage" id="stage">${stack}</div></div></div>
         <div class="actions">
           <button class="act act-md act-undo" data-act="undo" aria-label="Undo">${I.undo}</button>
           <button class="act act-lg act-pass" data-act="pass" aria-label="${t.pass}">${I.close}</button>
           <button class="act act-md act-super" data-act="super" aria-label="${t.superLike}">${I.star}</button>
           <button class="act act-lg act-like" data-act="like" aria-label="${t.like}">${I.heart}</button>
         </div>
-        <div class="deck-hint">Swipe, tap the buttons, or use ← → ↑ keys</div>
-      </div>`;
+        <div class="deck-hint">Drag the card, tap the buttons, or use ← → ↑ keys</div>
+      </div></div>`;
   }
 
   function cardHTML(p, depth) {
@@ -302,7 +297,7 @@
     const newOnes = state.matches.filter((m) => m.isNew);
     const threads = state.matches;
     return `
-      <div class="screen">
+      <div class="screen"><div class="col col-wide">
         <div class="topbar"><h1>Partners</h1>
           <span class="pill">${I.heart}&nbsp;${state.matches.length}</span>
         </div>
@@ -331,7 +326,7 @@
             </div>`;
           }).join('')}
         </div>
-      </div>`;
+      </div></div>`;
   }
 
   /* ===================================================================
@@ -344,7 +339,7 @@
     const cat = CATEGORIES[p.primary];
     const chips = ['✅ Did my workout', '🙌 Crushed it today', '😅 Need a nudge', '📅 Same time tomorrow?'];
     return `
-      <div class="screen chat">
+      <div class="screen chat"><div class="col col-chat">
         <div class="chat-head">
           <button class="back" data-act="back-matches">‹</button>
           <div class="chat-av" style="background:${grad(p.grad)}">${mono(p.name)}</div>
@@ -364,7 +359,7 @@
           <input id="msgInput" placeholder="Message ${esc(p.name)}…" autocomplete="off" />
           <button class="send-btn" data-act="send" aria-label="Send">${I.send}</button>
         </div>
-      </div>`;
+      </div></div>`;
   }
   const bubbleHTML = (b) => `<div class="bubble ${b.from}">${esc(b.text)}<span class="bt">${esc(b.t || '')}</span></div>`;
 
@@ -397,7 +392,7 @@
     const streak = ME.streak + state.progress.filter((g) => g.done).length;
     const cheerer = personById('maya');
     return `
-      <div class="screen">
+      <div class="screen"><div class="col col-wide">
         <div class="topbar"><div><h1>Your progress</h1><div class="sub">Consistency beats intensity</div></div></div>
         <div class="scroll">
           <div class="streak-hero">
@@ -426,7 +421,7 @@
             </div>`;
           }).join('')}
         </div>
-      </div>`;
+      </div></div>`;
   }
   function heatCells() {
     let s = '';
@@ -443,7 +438,7 @@
   function renderProfile() {
     const reviews = REVIEWS.you || [];
     return `
-      <div class="screen">
+      <div class="screen"><div class="col col-wide">
         <div class="topbar"><h1>Profile</h1><button class="icon-btn" data-act="lab" aria-label="Design Lab">${I.bolt}</button></div>
         <div class="scroll">
           <div class="profile-hero">
@@ -489,7 +484,7 @@
           <button class="btn btn-block" data-act="rate" data-id="maya" style="margin-top:6px">Rate a past partner</button>
           <div style="height:14px"></div>
         </div>
-      </div>`;
+      </div></div>`;
   }
 
   /* ===================================================================
@@ -566,6 +561,7 @@
      =================================================================== */
   function renderOnboarding() {
     overlay.innerHTML = `
+      <div class="onb-scrim">
       <div class="onb">
         <div class="onb-logo">T</div>
         <h1>Tandem</h1>
@@ -578,6 +574,7 @@
         <div class="spacer"></div>
         <button class="btn btn-block" data-act="start">Find my goal partner</button>
         <button class="skip" data-act="start">Allow location · Bandra West 📍</button>
+      </div>
       </div>`;
   }
 
@@ -642,7 +639,7 @@
   function toast(msg) {
     const old = $('.toast'); if (old) old.remove();
     const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
-    $('#device').appendChild(t);
+    document.body.appendChild(t);
     clearTimeout(toastT);
     toastT = setTimeout(() => t.remove(), 2200);
   }
