@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="sunset" data-tone="playful" data-discover="stack">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FF6B5C" />
+  <title>Tandem — match your goals</title>
+  <meta name="description" content="Tandem is Tinder for goals. Match with nearby people chasing the same goals, become accountability partners, track progress together, and rate each other." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23FF6B5C'/%3E%3Cstop offset='1' stop-color='%23FFB23E'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='26' fill='url(%23g)'/%3E%3Ctext x='50' y='70' font-size='58' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3ET%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <div class="appshell">
+    <!-- Sidebar (desktop) / bottom tab bar (mobile) -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">T</div>
+        <span class="brand-name">Tandem</span>
+      </div>
+      <nav id="nav" class="nav" aria-label="Primary"></nav>
+      <button class="lab-side" data-act="lab" aria-label="Open Design Lab">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.5L5.5 17a2.5 2.5 0 0 0 2.2 3.6h8.6A2.5 2.5 0 0 0 18.5 17L14 8.5V3"/><path d="M7.5 14h9"/></svg>
+        <span>Design Lab</span>
+      </button>
+    </aside>
+
+    <!-- App content -->
+    <main id="app" class="app"></main>
+  </div>
+
+  <!-- Floating Design Lab button (mobile) -->
+  <button id="labBtn" class="lab-fab" title="Design Lab — try the variations" aria-label="Open Design Lab">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.5L5.5 17a2.5 2.5 0 0 0 2.2 3.6h8.6A2.5 2.5 0 0 0 18.5 17L14 8.5V3"/><path d="M7.5 14h9"/></svg>
+  </button>
+
+  <!-- Overlays (modals, sheets, onboarding, confetti) -->
+  <div id="overlay" class="overlay-root"></div>
+
+  <!-- Design Lab drawer -->
+  <aside id="lab" class="lab" aria-hidden="true">
+    <div class="lab-head">
+      <div>
+        <h2>Design Lab</h2>
+        <p>Try the variations — everything updates live.</p>
+      </div>
+      <button id="labClose" class="icon-btn" aria-label="Close">&times;</button>
+    </div>
+    <div class="lab-body" id="labBody"></div>
+    <div class="lab-foot">
+      <span class="dot-brand"></span> Tandem prototype · all data is mock
+    </div>
+  </aside>
+  <div id="labScrim" class="lab-scrim" aria-hidden="true"></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
