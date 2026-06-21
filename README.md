@@ -7,8 +7,10 @@ most reliable partners rise to the top.
 
 > Goals are better with company.
 
-This repo is a **fully interactive, dependency-free mobile-app prototype** you can
-open in any browser — no build step, no install, no backend. All data is mock.
+This repo is a **fully interactive, dependency-free, responsive web-app prototype**
+you can open in any browser — no build step, no install, no backend. All data is
+mock. It runs full-screen as a web app (sidebar on desktop, bottom tab bar on
+mobile) and is structured so it can later be wrapped into a native mobile app.
 
 ---
 
@@ -56,16 +58,16 @@ It's a static site — no build needed. Import the repo into Vercel (framework
 preset: **Other**) and it serves `index.html` from the root. `vercel.json` is
 included so no build command runs.
 
-> 📱 Best viewed on a phone, or use your browser's device toolbar (iPhone
-> viewport). On desktop it renders inside a phone frame.
+> 🖥️📱 Fully responsive: a sidebar layout on desktop that collapses to a
+> bottom tab bar on mobile. Resize the window to see it adapt.
 
 ---
 
 ## 🗂 Structure
 
 ```
-index.html   — phone shell, status bar, tab bar, Design Lab drawer
-styles.css   — design system + 3 themes (CSS variables) + all components
+index.html   — app shell (sidebar / bottom nav), Design Lab drawer
+styles.css   — design system + 3 themes (CSS variables) + responsive layout
 data.js      — mock people, goals, reviews, chat threads, tone copy
 app.js       — state, swipe mechanics, screens, matching, ratings, the Lab
 ```
