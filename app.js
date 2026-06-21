@@ -28,7 +28,7 @@
         onboarded: state.onboarded, name: state.name, myCats: [...state.myCats],
         theme: state.theme, tone: state.tone, discover: state.discover,
         swiped: [...state.swiped], matches: state.matches, goals: state.goals,
-        streak: state.streak, filters: { ...state.filters, cats: [...state.filters.cats] },
+        streak: state.streak, ratings: state.ratings, filters: { ...state.filters, cats: [...state.filters.cats] },
       }));
     } catch (e) { /* no storage (e.g. SSR/harness) */ }
   }
@@ -40,8 +40,8 @@
     myCats: new Set(ME.goals.map((g) => g.cat)),
     swiped: new Set(),
     matches: SEED_MATCHES.map((m) => ({ ...m, messages: m.messages.slice() })),
-    activeMatch: null, history: [], activitySeen: false,
-    filters: { cats: new Set(), radius: 8, minRating: 0, sort: 'match' },
+    activeMatch: null, history: [], activitySeen: false, ratings: {},
+    filters: { cats: new Set(), radius: 8, minRating: 0, sort: 'match', verified: false, active: false },
     goals: ME.goals.map((g) => ({ ...g, doneToday: false })),
     streak: ME.streak,
     tone: root.dataset.tone || 'playful', theme: root.dataset.theme || 'sunset', discover: root.dataset.discover || 'stack',
@@ -57,7 +57,8 @@
     });
     if (r.matches) state.matches = r.matches;
     if (r.goals) state.goals = r.goals;
-    if (r.filters) state.filters = { cats: new Set(r.filters.cats || []), radius: r.filters.radius ?? 8, minRating: r.filters.minRating ?? 0, sort: r.filters.sort || 'match' };
+    if (r.ratings) state.ratings = r.ratings;
+    if (r.filters) state.filters = { cats: new Set(r.filters.cats || []), radius: r.filters.radius ?? 8, minRating: r.filters.minRating ?? 0, sort: r.filters.sort || 'match', verified: !!r.filters.verified, active: !!r.filters.active };
     root.dataset.theme = state.theme; root.dataset.tone = state.tone; root.dataset.discover = state.discover;
   })();
 
@@ -69,6 +70,13 @@
     let h = 0; for (const ch of p.id) h = (h * 31 + ch.charCodeAt(0)) % 15;
     return Math.max(61, Math.min(99, Math.round(s + h - 7)));
   }
+  // Effective rating including any rating you've given (recomputed average).
+  const RATE_LABELS = { 1: 'Needs work', 2: 'Okay', 3: 'Good', 4: 'Great', 5: 'Amazing 🤩' };
+  function displayRating(p) {
+    const mine = state.ratings[p.id];
+    if (!mine) return { rating: p.rating, count: p.ratingCount, mine: 0 };
+    return { rating: (p.rating * p.ratingCount + mine.stars) / (p.ratingCount + 1), count: p.ratingCount + 1, mine: mine.stars };
+  }
   const isMatched = (id) => state.matches.some((m) => m.id === id);
   function deck() {
     let arr = PEOPLE.filter((p) => {
@@ -79,6 +87,8 @@
       }
       if (p.distance > state.filters.radius) return false;
       if (p.rating < state.filters.minRating) return false;
+      if (state.filters.verified && !p.verified) return false;
+      if (state.filters.active && !['now', '2h', 'today'].includes(p.active)) return false;
       return true;
     });
     const s = state.filters.sort;
@@ -177,7 +187,7 @@
 
   function cardHTML(p, depth) {
     const cat = CATEGORIES[p.primary];
-    const sc = matchScore(p);
+    const sc = matchScore(p); const dr = displayRating(p);
     const style = depth === 0 ? 'z-index:2' : 'transform:translateY(-30px) scale(.94);filter:brightness(.96);z-index:1;pointer-events:none';
     return `
       <article class="swipe-card" data-id="${p.id}" data-depth="${depth}" style="${style}">
@@ -191,7 +201,7 @@
             <span class="dist-chip">${I.pin}${p.distance} km · ${esc(p.neighborhood)}</span>
             <span class="active-chip ${p.active === 'now' ? 'live' : ''}"><i></i>${esc(activeText(p.active))}</span>
           </div>
-          <span class="rate-chip"><span class="star">★</span>${p.rating.toFixed(1)}</span>
+          <span class="rate-chip"><span class="star">★</span>${dr.rating.toFixed(1)}<small>(${dr.count})</small></span>
         </div>
         <div class="card-info">
           <div class="match-pill"><b>${sc}%</b> goal match</div>
@@ -211,7 +221,7 @@
       return `<div class="person-row" data-card="${p.id}">
         <div class="person-av" style="background:${grad(p.grad)}">${mono(p.name)}<span class="pe">${cat.emoji}</span></div>
         <div class="person-meta">
-          <div class="pn">${esc(p.name)}, ${p.age} ${p.verified ? `<i class="vf sm">${I.verified}</i>` : ''}<span class="r"><span class="star">★</span>${p.rating.toFixed(1)}</span></div>
+          <div class="pn">${esc(p.name)}, ${p.age} ${p.verified ? `<i class="vf sm">${I.verified}</i>` : ''}<span class="r"><span class="star">★</span>${displayRating(p).rating.toFixed(1)}</span></div>
           <div class="pg">${esc(p.headline)}</div>
           <div class="pd"><span class="mscore">${sc}% match</span> · 📍 ${p.distance} km · ${esc(activeText(p.active))}</div>
         </div>
@@ -340,15 +350,18 @@
               <div class="nm">${esc(p.name)}</div></div>`; }).join('')}</div>` : ''}
           <div class="section-label">Your accountability partners</div>
           ${state.matches.length ? state.matches.map((m) => {
-            const p = personById(m.id); const cat = CATEGORIES[p.primary];
+            const p = personById(m.id); const cat = CATEGORIES[p.primary]; const dr = displayRating(p); const rated = state.ratings[m.id];
             return `<div class="match-row" data-open="${m.id}">
               <div class="chat-av lg" style="background:${grad(p.grad)}">${mono(p.name)}</div>
               <div class="match-meta">
                 <div class="mn">${esc(p.name)} <span class="goalchip" style="background:${cat.color}">${cat.emoji} ${esc(m.sharedGoal)}</span></div>
                 <div class="ml">${esc(m.lastActivity)}</div>
-                <div class="ml sub2">${m.daysPaired ? `🔗 paired ${m.daysPaired} days` : '✨ just matched'} · ★ ${p.rating.toFixed(1)} · ${matchScore(p)}% match</div>
+                <div class="ml sub2">${m.daysPaired ? `🔗 ${m.daysPaired}d` : '✨ new'} · ★ ${dr.rating.toFixed(1)} · ${matchScore(p)}% match</div>
               </div>
-              <div class="match-right">${m.unread ? `<span class="unread">${m.unread}</span>` : `<span class="t">›</span>`}</div>
+              <div class="match-right">
+                ${m.unread ? `<span class="unread">${m.unread}</span>` : ''}
+                <button class="rate-btn ${rated ? 'rated' : ''}" data-act="rate" data-id="${m.id}" aria-label="Rate ${esc(p.name)}">${rated ? `★ ${rated.stars}` : `${I.star}<span>Rate</span>`}</button>
+              </div>
             </div>`;
           }).join('') : `<div class="empty-mini">No partners yet — head to Discover and pair up! 🤝</div>`}
         </div>
@@ -376,6 +389,7 @@
           <div class="gb-text"><b>Shared goal · ${esc(m.sharedGoal)}</b><small>${esc(p.shared)}</small></div>
           <span class="streak-badge">🔥 ${p.streak}d</span>
         </div>
+        ${!state.ratings[m.id] && m.messages.length >= 2 ? `<button class="rate-nudge" data-act="rate" data-id="${m.id}"><span>⭐ How's ${esc(p.name)} as a partner?</span><b>Rate →</b></button>` : ''}
         <div class="msgs" id="msgs">${msgsHTML(m)}</div>
         <div class="quick-chips">${chips.map((c) => `<button class="qchip" data-chip="${esc(c)}">${c}</button>`).join('')}</div>
         <div class="composer">
@@ -518,9 +532,10 @@
 
   function openProfileSheet(id) {
     const p = personById(id); if (!p) return;
-    const cat = CATEGORIES[p.primary]; const sc = matchScore(p); const reviews = REVIEWS[id] || [];
+    const cat = CATEGORIES[p.primary]; const sc = matchScore(p); const dr = displayRating(p);
+    const reviews = REVIEWS[id] || []; const matched = isMatched(id); const rated = state.ratings[id];
     sheet(`
-      <div class="sheet-grab"></div>
+      <button class="ps-x" data-act="close-sheet" aria-label="Close">${I.close}</button>
       <div class="ps-hero" style="background:${grad(p.grad)}">
         <div class="ps-mono">${mono(p.name)}</div>
         <span class="ps-emoji">${cat.emoji}</span>
@@ -528,7 +543,7 @@
       </div>
       <div class="ps-body">
         <div class="ps-name">${esc(p.name)}, ${p.age} ${p.verified ? `<i class="vf">${I.verified}</i>` : ''}</div>
-        <div class="ps-meta">${I.pin}${p.distance} km · ${esc(p.neighborhood)} · <span class="star">★</span> ${p.rating.toFixed(1)} (${p.ratingCount}) · ${esc(activeText(p.active))}</div>
+        <div class="ps-meta">${I.pin}${p.distance} km · ${esc(p.neighborhood)} · <span class="star">★</span> ${dr.rating.toFixed(1)} (${dr.count})${rated ? ` · you ★${rated.stars}` : ''} · ${esc(activeText(p.active))}</div>
         <div class="ps-headline">${esc(p.headline)}</div>
         <p class="ps-bio">${esc(p.bio)}</p>
         <div class="tagrow dark">${p.tags.map((x) => `<span class="tag">${esc(x)}</span>`).join('')}</div>
@@ -542,61 +557,83 @@
           <div class="rv-text">“${esc(r.text)}”</div></div>`).join('')}` : ''}
       </div>
       <div class="ps-actions">
-        <button class="btn btn-ghost" data-act="sheet-pass" data-id="${id}">${tone().pass}</button>
-        <button class="btn" data-act="sheet-connect" data-id="${id}">${tone().like}</button>
+        ${matched
+        ? `<button class="btn btn-ghost" data-act="rate" data-id="${id}">${rated ? `★ Rated ${rated.stars}` : 'Rate partner'}</button>
+           <button class="btn" data-act="go-chat" data-id="${id}">Message</button>`
+        : `<button class="btn btn-ghost" data-act="sheet-pass" data-id="${id}">${tone().pass}</button>
+           <button class="btn" data-act="sheet-connect" data-id="${id}">${tone().like}</button>`}
       </div>`);
   }
 
   function openRateSheet(id) {
-    const p = personById(id) || { name: 'your partner' };
-    const tags = ['Reliable', 'Motivating', 'Honest', 'Responsive', 'Knowledgeable', 'Encouraging'];
-    let stars = 0; const chosen = new Set();
+    const p = personById(id) || { name: 'your partner', grad: 0 };
+    const existing = state.ratings[id];
+    const tags = ['Reliable', 'Motivating', 'Honest', 'Responsive', 'Knowledgeable', 'On time'];
+    let stars = existing ? existing.stars : 0; const chosen = new Set(existing ? existing.tags : []);
     sheet(`
-      <div class="sheet-grab"></div>
-      <h3>Rate ${esc(p.name)}</h3>
-      <div class="sheet-sub">Public ratings help everyone find dependable partners.</div>
-      <div class="star-pick" id="starPick">${[1, 2, 3, 4, 5].map((n) => `<button data-star="${n}">★</button>`).join('')}</div>
-      <div class="tag-pick" id="tagPick">${tags.map((t) => `<button data-tag="${t}">${t}</button>`).join('')}</div>
-      <button class="btn btn-block" id="rateSubmit">Submit rating</button>`);
-    $('#starPick').addEventListener('click', (e) => { const b = e.target.closest('[data-star]'); if (!b) return; stars = +b.dataset.star; [...$('#starPick').children].forEach((c, i) => c.classList.toggle('on', i < stars)); });
+      <div class="sheet-top"><h3>Rate ${esc(p.name)}</h3><button class="sheet-x" data-act="close-sheet" aria-label="Close">${I.close}</button></div>
+      <div class="rate-who">
+        <div class="rate-av" style="background:${grad(p.grad)}">${mono(p.name)}</div>
+        <div class="rate-blurb">Your rating is public — it helps others find dependable partners (and helps ${esc(p.name)} get matched).</div>
+      </div>
+      <div class="star-pick" id="starPick">${[1, 2, 3, 4, 5].map((n) => `<button data-star="${n}" class="${n <= stars ? 'on' : ''}">★</button>`).join('')}</div>
+      <div class="rate-label" id="rateLabel">${stars ? RATE_LABELS[stars] : 'Tap to rate'}</div>
+      <div class="fg-label center">What were they great at?</div>
+      <div class="tag-pick" id="tagPick">${tags.map((t) => `<button data-tag="${t}" class="${chosen.has(t) ? 'on' : ''}">${t}</button>`).join('')}</div>
+      <button class="btn btn-block" id="rateSubmit">${existing ? 'Update rating' : 'Submit rating'}</button>`);
+    $('#starPick').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-star]'); if (!b) return; stars = +b.dataset.star;
+      [...$('#starPick').children].forEach((c, i) => c.classList.toggle('on', i < stars));
+      $('#rateLabel').textContent = RATE_LABELS[stars];
+    });
     $('#tagPick').addEventListener('click', (e) => { const b = e.target.closest('[data-tag]'); if (!b) return; b.classList.toggle('on'); chosen.has(b.dataset.tag) ? chosen.delete(b.dataset.tag) : chosen.add(b.dataset.tag); });
-    $('#rateSubmit').addEventListener('click', () => { if (!stars) return toast('Pick a star rating first ⭐'); closeOverlay(); toast(`Thanks! You rated ${p.name} ${stars}★`); });
+    $('#rateSubmit').addEventListener('click', () => {
+      if (!stars) return toast('Pick a star rating first ⭐');
+      state.ratings[id] = { stars, tags: [...chosen] }; persist();
+      closeOverlay(); render(); toast(`You rated ${p.name} ${stars}★ — thanks!`);
+    });
   }
 
   function openFilters() {
     const cats = Object.entries(CATEGORIES);
-    const sorts = [['match', '🎯 Best match'], ['distance', '📍 Closest'], ['rating', '⭐ Top rated']];
+    const sorts = [['match', 'Best match'], ['distance', 'Closest'], ['rating', 'Top rated']];
     sheet(`
-      <div class="sheet-grab"></div>
-      <h3>Find your match</h3>
-      <div class="sheet-sub">Partners near you, working on what you are.</div>
-      <div class="filter-group"><div class="fg-label">Sort by</div>
+      <div class="sheet-top"><h3>Filters</h3><button class="sheet-x" data-act="close-sheet" aria-label="Close">${I.close}</button></div>
+      <div class="fg"><div class="fg-label">Sort by</div>
         <div class="seg" id="sortSeg">${sorts.map(([k, l]) => `<button data-sort="${k}" class="${state.filters.sort === k ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-      <div class="filter-group"><div class="fg-label">Goal categories</div>
-        <div class="cat-pick" id="catPick">${cats.map(([k, c]) => `<button data-cat="${k}" class="${state.filters.cats.has(k) ? 'on' : ''}">${c.emoji} ${c.short}</button>`).join('')}</div></div>
-      <div class="filter-group"><div class="fg-label">Max distance</div>
-        <div class="range-row"><input type="range" id="radius" min="1" max="25" value="${state.filters.radius}"><b id="radiusVal">${state.filters.radius} km</b></div></div>
-      <div class="filter-group"><div class="fg-label">Minimum rating</div>
-        <div class="range-row"><input type="range" id="minR" min="0" max="5" step="0.5" value="${state.filters.minRating}"><b id="minRVal">${state.filters.minRating ? state.filters.minRating + '★' : 'Any'}</b></div></div>
-      <button class="btn btn-block" id="filterApply">Show matches</button>`);
-    let sort = state.filters.sort; const sel = new Set(state.filters.cats); let r = state.filters.radius, mr = state.filters.minRating;
-    $('#sortSeg').addEventListener('click', (e) => { const b = e.target.closest('[data-sort]'); if (!b) return; sort = b.dataset.sort; [...$('#sortSeg').children].forEach((c) => c.classList.toggle('on', c.dataset.sort === sort)); });
-    $('#catPick').addEventListener('click', (e) => { const b = e.target.closest('[data-cat]'); if (!b) return; const k = b.dataset.cat; b.classList.toggle('on'); sel.has(k) ? sel.delete(k) : sel.add(k); });
-    $('#radius').addEventListener('input', (e) => { r = +e.target.value; $('#radiusVal').textContent = r + ' km'; });
-    $('#minR').addEventListener('input', (e) => { mr = +e.target.value; $('#minRVal').textContent = mr ? mr + '★' : 'Any'; });
-    $('#filterApply').addEventListener('click', () => { state.filters = { cats: sel, radius: r, minRating: mr, sort }; persist(); closeOverlay(); render(); toast(deck().length + ' people match your filters'); });
+      <div class="fg"><div class="fg-label">Goals</div>
+        <div class="chips" id="catPick">${cats.map(([k, c]) => `<button data-cat="${k}" class="chip ${state.filters.cats.has(k) ? 'on' : ''}">${c.emoji} ${c.short}</button>`).join('')}</div></div>
+      <div class="fg"><div class="fg-row"><span class="fg-label">Max distance</span><b id="radiusVal">${state.filters.radius} km</b></div>
+        <input class="range" type="range" id="radius" min="1" max="25" value="${state.filters.radius}"></div>
+      <div class="fg"><div class="fg-row"><span class="fg-label">Minimum rating</span><b id="minRVal">${state.filters.minRating ? state.filters.minRating + '★' : 'Any'}</b></div>
+        <input class="range" type="range" id="minR" min="0" max="5" step="0.5" value="${state.filters.minRating}"></div>
+      <div class="toggle-row" data-tg="verified"><div><b>Verified only</b><small>People who confirmed their profile</small></div><span class="switch ${state.filters.verified ? 'on' : ''}"></span></div>
+      <div class="toggle-row" data-tg="active"><div><b>Active recently</b><small>Online today</small></div><span class="switch ${state.filters.active ? 'on' : ''}"></span></div>
+      <div class="sheet-actions">
+        <button class="btn btn-ghost" id="filterReset">Reset</button>
+        <button class="btn flex2" id="filterApply">Show <span id="cnt"></span></button>
+      </div>`);
+    let f = { cats: new Set(state.filters.cats), radius: state.filters.radius, minRating: state.filters.minRating, sort: state.filters.sort, verified: state.filters.verified, active: state.filters.active };
+    const updateCnt = () => { const saved = state.filters; state.filters = f; const n = deck().length; state.filters = saved; const c = $('#cnt'); if (c) c.textContent = n; };
+    updateCnt();
+    $('#sortSeg').addEventListener('click', (e) => { const b = e.target.closest('[data-sort]'); if (!b) return; f.sort = b.dataset.sort; [...$('#sortSeg').children].forEach((c) => c.classList.toggle('on', c.dataset.sort === f.sort)); updateCnt(); });
+    $('#catPick').addEventListener('click', (e) => { const b = e.target.closest('[data-cat]'); if (!b) return; const k = b.dataset.cat; b.classList.toggle('on'); f.cats.has(k) ? f.cats.delete(k) : f.cats.add(k); updateCnt(); });
+    $('#radius').addEventListener('input', (e) => { f.radius = +e.target.value; $('#radiusVal').textContent = f.radius + ' km'; updateCnt(); });
+    $('#minR').addEventListener('input', (e) => { f.minRating = +e.target.value; $('#minRVal').textContent = f.minRating ? f.minRating + '★' : 'Any'; updateCnt(); });
+    overlay.querySelectorAll('[data-tg]').forEach((row) => row.addEventListener('click', () => { const k = row.dataset.tg; f[k] = !f[k]; row.querySelector('.switch').classList.toggle('on', f[k]); updateCnt(); }));
+    $('#filterReset').addEventListener('click', () => { state.filters = { cats: new Set(), radius: 25, minRating: 0, sort: 'match', verified: false, active: false }; persist(); closeOverlay(); render(); toast('Filters cleared'); });
+    $('#filterApply').addEventListener('click', () => { state.filters = f; persist(); closeOverlay(); render(); toast(deck().length + ' people match'); });
   }
 
   function openAddGoal() {
     const cats = Object.entries(CATEGORIES);
     let pick = null;
     sheet(`
-      <div class="sheet-grab"></div>
-      <h3>Add a goal</h3>
-      <div class="sheet-sub">It’ll show on your profile and improve your matches.</div>
-      <div class="filter-group"><div class="fg-label">Category</div>
-        <div class="cat-pick" id="goalCat">${cats.map(([k, c]) => `<button data-cat="${k}">${c.emoji} ${c.short}</button>`).join('')}</div></div>
-      <div class="filter-group"><div class="fg-label">What's the goal?</div>
+      <div class="sheet-top"><h3>Add a goal</h3><button class="sheet-x" data-act="close-sheet" aria-label="Close">${I.close}</button></div>
+      <div class="sheet-sub left">It’ll show on your profile and improve your matches.</div>
+      <div class="fg"><div class="fg-label">Category</div>
+        <div class="chips" id="goalCat">${cats.map(([k, c]) => `<button data-cat="${k}" class="chip">${c.emoji} ${c.short}</button>`).join('')}</div></div>
+      <div class="fg"><div class="fg-label">What's the goal?</div>
         <input class="text-in" id="goalText" placeholder="e.g. Run a 10K under 60 min" maxlength="60" /></div>
       <button class="btn btn-block" id="goalSubmit">Add goal</button>`);
     $('#goalCat').addEventListener('click', (e) => { const b = e.target.closest('[data-cat]'); if (!b) return; pick = b.dataset.cat; [...$('#goalCat').children].forEach((c) => c.classList.toggle('on', c.dataset.cat === pick)); });
@@ -612,9 +649,7 @@
   function openActivity() {
     state.activitySeen = true;
     sheet(`
-      <div class="sheet-grab"></div>
-      <h3>Activity</h3>
-      <div class="sheet-sub">What's happening with your goals & partners.</div>
+      <div class="sheet-top"><h3>Activity</h3><button class="sheet-x" data-act="close-sheet" aria-label="Close">${I.close}</button></div>
       <div class="act-list">${ACTIVITY.map((a) => {
         const p = a.who ? personById(a.who) : null;
         return `<div class="act-item">
@@ -688,8 +723,8 @@
     state.onboarded = true; state.name = 'You'; state.swiped = new Set();
     state.matches = SEED_MATCHES.map((m) => ({ ...m, messages: m.messages.slice() }));
     state.goals = ME.goals.map((g) => ({ ...g, doneToday: false })); state.streak = ME.streak;
-    state.myCats = new Set(ME.goals.map((g) => g.cat)); state.history = [];
-    state.filters = { cats: new Set(), radius: 8, minRating: 0, sort: 'match' };
+    state.myCats = new Set(ME.goals.map((g) => g.cat)); state.history = []; state.ratings = {};
+    state.filters = { cats: new Set(), radius: 8, minRating: 0, sort: 'match', verified: false, active: false };
     persist(); closeLab(); render(); toast('Demo reset ↺');
   }
 
@@ -731,11 +766,12 @@
 
   document.addEventListener('click', (e) => {
     const tab = e.target.closest('[data-tab]'); if (tab) return go(tab.dataset.tab);
-    const open = e.target.closest('[data-open]'); if (open) { state.activeMatch = open.dataset.open; markRead(open.dataset.open); persist(); return go('chat'); }
     const chip = e.target.closest('[data-chip]'); if (chip) return sendMessage(chip.dataset.chip);
     const checkin = e.target.closest('[data-checkin]'); if (checkin) return doCheckin(+checkin.dataset.checkin);
     const labOpt = e.target.closest('[data-lab]'); if (labOpt) return setLab(labOpt.dataset.lab, labOpt.dataset.val);
+    // data-act before data-open so a Rate button inside a partner row wins over "open chat"
     const a = e.target.closest('[data-act]'); if (a) return handleAct(a.dataset.act, a.dataset.id);
+    const open = e.target.closest('[data-open]'); if (open) { state.activeMatch = open.dataset.open; markRead(open.dataset.open); persist(); return go('chat'); }
     // data-card last so explicit buttons/actions inside a card take precedence
     const card = e.target.closest('[data-card]'); if (card) return openProfileSheet(card.dataset.card);
   });
@@ -757,6 +793,7 @@
       case 'back-matches': return go('matches');
       case 'send': { const inp = $('#msgInput'); const v = inp.value; inp.value = ''; return sendMessage(v); }
       case 'rate': return openRateSheet(id);
+      case 'close-sheet': return closeOverlay();
       case 'add-goal': return openAddGoal();
       case 'edit-name': return startOnboarding();
       case 'lab': return openLab();
