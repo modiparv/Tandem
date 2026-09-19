@@ -1,6 +1,8 @@
 /* =========================================================================
-   Tandem — mock data
+   Tandem — data model & content
    No backend, no external images. Avatars are generated gradients + monograms.
+   Everything time-based is expressed as offsets; app.js turns them into real
+   timestamps on first run so the demo always feels "live today".
    ========================================================================= */
 
 const CATEGORIES = {
@@ -18,11 +20,15 @@ const AVATAR_GRADIENTS = [
   ['#FF6F91', '#FFC75F'], ['#F9844A', '#FEE440'],
 ];
 
-// Mock candidate deck. distance in km. rating /5, count = past partners. active = recency.
+// Neighbourhoods offered in onboarding / profile editing (Mumbai demo city).
+const NEIGHBORHOODS = ['Bandra West', 'Bandra East', 'Andheri', 'Juhu', 'Khar', 'Powai', 'Lower Parel', 'Worli', 'Dadar', 'Colaba'];
+
+// Candidate pool. distance in km. rating /5, ratingCount = past partners who rated them.
+// active = recency ('now' | '2h' | 'today' | 'yesterday'). checkedInToday drives the shared-streak indicator.
 const PEOPLE = [
   {
     id: 'maya', name: 'Maya', age: 27, distance: 1.2, neighborhood: 'Bandra West',
-    grad: 0, rating: 4.9, ratingCount: 23, streak: 41, active: 'now', verified: true,
+    grad: 0, rating: 4.9, ratingCount: 23, streak: 41, active: 'now', verified: true, checkedInToday: true,
     primary: 'fitness',
     headline: 'Training for my first half-marathon 🏃‍♀️',
     bio: "5am runner trying to stay consistent. Need someone to text 'we run today' when it rains. I'll do the same for you.",
@@ -36,7 +42,7 @@ const PEOPLE = [
   },
   {
     id: 'dev', name: 'Dev', age: 31, distance: 2.4, neighborhood: 'Powai',
-    grad: 1, rating: 4.7, ratingCount: 15, streak: 12, active: '2h', verified: true,
+    grad: 1, rating: 4.7, ratingCount: 15, streak: 12, active: '2h', verified: true, checkedInToday: true,
     primary: 'career',
     headline: 'Leaving my job to launch a SaaS 🚀',
     bio: 'Shipping in public. Looking for a founder buddy for weekly check-ins, brutal honesty and shared wins.',
@@ -50,7 +56,7 @@ const PEOPLE = [
   },
   {
     id: 'aisha', name: 'Aisha', age: 24, distance: 0.8, neighborhood: 'Andheri',
-    grad: 3, rating: 5.0, ratingCount: 9, streak: 28, active: 'now', verified: false,
+    grad: 3, rating: 5.0, ratingCount: 9, streak: 28, active: 'now', verified: false, checkedInToday: true,
     primary: 'finance',
     headline: 'Saving for 6 months of runway 💰',
     bio: 'No-spend challenges are more fun with company. Let’s keep each other off the impulse-buy button.',
@@ -64,7 +70,7 @@ const PEOPLE = [
   },
   {
     id: 'leo', name: 'Leo', age: 29, distance: 3.1, neighborhood: 'Lower Parel',
-    grad: 5, rating: 4.6, ratingCount: 19, streak: 7, active: 'today', verified: false,
+    grad: 5, rating: 4.6, ratingCount: 19, streak: 7, active: 'today', verified: false, checkedInToday: false,
     primary: 'learning',
     headline: 'Learning guitar before I turn 30 🎸',
     bio: '30 minutes a day, no excuses. Would love a practice partner to swap clips and keep the streak alive.',
@@ -78,7 +84,7 @@ const PEOPLE = [
   },
   {
     id: 'priya', name: 'Priya', age: 33, distance: 1.9, neighborhood: 'Juhu',
-    grad: 4, rating: 4.8, ratingCount: 31, streak: 63, active: 'now', verified: true,
+    grad: 4, rating: 4.8, ratingCount: 31, streak: 63, active: 'now', verified: true, checkedInToday: true,
     primary: 'habits',
     headline: 'Quit sugar, building a meditation habit 🌱',
     bio: 'Down 9kg this year. I’m great at the gentle nudge. Looking for someone who actually wants the nudge.',
@@ -92,7 +98,7 @@ const PEOPLE = [
   },
   {
     id: 'sam', name: 'Sam', age: 26, distance: 4.6, neighborhood: 'Colaba',
-    grad: 7, rating: 4.5, ratingCount: 11, streak: 4, active: 'yesterday', verified: false,
+    grad: 7, rating: 4.5, ratingCount: 11, streak: 4, active: 'yesterday', verified: false, checkedInToday: false,
     primary: 'travel',
     headline: 'Planning a solo trek to Ladakh 🏔️',
     bio: 'Saving + training + planning. Want a partner to keep the prep on schedule (and maybe share an itinerary).',
@@ -106,7 +112,7 @@ const PEOPLE = [
   },
   {
     id: 'noor', name: 'Noor', age: 28, distance: 2.0, neighborhood: 'Khar',
-    grad: 6, rating: 4.9, ratingCount: 17, streak: 22, active: '2h', verified: true,
+    grad: 6, rating: 4.9, ratingCount: 17, streak: 22, active: '2h', verified: true, checkedInToday: true,
     primary: 'career',
     headline: 'Switching into product management 💼',
     bio: 'Doing case studies every week. Want a study buddy to review answers and do mock interviews.',
@@ -120,7 +126,7 @@ const PEOPLE = [
   },
   {
     id: 'arjun', name: 'Arjun', age: 30, distance: 5.3, neighborhood: 'Dadar',
-    grad: 2, rating: 4.4, ratingCount: 8, streak: 9, active: 'today', verified: false,
+    grad: 2, rating: 4.4, ratingCount: 8, streak: 9, active: 'today', verified: false, checkedInToday: true,
     primary: 'fitness',
     headline: 'Back to the gym after 2 years 🏋️',
     bio: 'Consistency over intensity. Need a check-in buddy so I actually show up on the hard days.',
@@ -134,7 +140,7 @@ const PEOPLE = [
   },
   {
     id: 'kabir', name: 'Kabir', age: 32, distance: 3.7, neighborhood: 'Worli',
-    grad: 8, rating: 4.8, ratingCount: 26, streak: 35, active: 'now', verified: true,
+    grad: 8, rating: 4.8, ratingCount: 26, streak: 35, active: 'now', verified: true, checkedInToday: true,
     primary: 'finance',
     headline: 'Building a 12-month investing habit 📈',
     bio: 'Automating SIPs and tracking net worth monthly. Looking for someone to compare notes and stay disciplined.',
@@ -148,7 +154,7 @@ const PEOPLE = [
   },
   {
     id: 'tara', name: 'Tara', age: 25, distance: 1.5, neighborhood: 'Bandra East',
-    grad: 9, rating: 4.7, ratingCount: 13, streak: 19, active: 'now', verified: false,
+    grad: 9, rating: 4.7, ratingCount: 13, streak: 19, active: 'now', verified: false, checkedInToday: false,
     primary: 'learning',
     headline: 'Learning Spanish for a trip to Spain 🇪🇸',
     bio: 'Duolingo streak alive but I need conversation practice. Bonus if you also want to travel after.',
@@ -173,61 +179,103 @@ const REVIEWS = {
   priya: [{ by: 'Anil', stars: 5, tags: ['Encouraging', 'Calm'], text: 'Gentle but firm. Helped me build a real habit.' }],
   noor: [{ by: 'Jay', stars: 5, tags: ['Sharp', 'Supportive'], text: 'Her mock interviews got me the offer. Legend.' }],
   kabir: [{ by: 'Dia', stars: 5, tags: ['Methodical'], text: 'Made investing feel simple and kept me accountable.' }],
+  leo: [{ by: 'Zara', stars: 4, tags: ['Patient', 'Creative'], text: 'Swapped practice clips every night. Kept me going.' }],
   you: [
     { by: 'Tara', stars: 5, tags: ['Reliable', 'Honest'], text: 'Always checked in on time. Kept me accountable for 6 weeks!' },
     { by: 'Kabir', stars: 4, tags: ['Motivating'], text: 'Great energy. Pushed me on my low days.' },
   ],
 };
 
-// Your own profile (defaults; personalized during onboarding & persisted).
+// Your own profile (defaults; personalised during onboarding & persisted).
+// Goal check-in history is generated on first run (see app.js seedHistory) so the streak & heatmap are real.
 const ME = {
   name: 'You', age: 28, neighborhood: 'Bandra West', grad: 0,
-  rating: 4.8, ratingCount: 14, streak: 18,
+  headline: 'Building consistent habits, one check-in at a time',
+  bio: 'I show up on the hard days and I’ll text you when you’re about to skip. Looking for partners who want honest, daily accountability.',
+  rating: 4.8, ratingCount: 14,
   goals: [
-    { cat: 'fitness', text: 'Run a 10K under 60 min', stage: 'Week 4 of 12', progress: 0.42, checkins: 16, target: 36 },
-    { cat: 'learning', text: 'Read 12 books this year', stage: '5 / 12 books', progress: 0.41, checkins: 5, target: 12 },
-    { cat: 'finance', text: 'Save ₹2,00,000', stage: '₹86k saved', progress: 0.43, checkins: 9, target: 20 },
+    { cat: 'fitness',  text: 'Run a 10K under 60 min',  stage: 'Week 4 of 12',  target: 36, density: 0.75 },
+    { cat: 'learning', text: 'Read 12 books this year',  stage: '5 / 12 books',  target: 30, density: 0.35 },
+    { cat: 'finance',  text: 'Save ₹2,00,000',           stage: '₹86k saved',    target: 30, density: 0.45 },
   ],
-  badges: ['🔥 18-day streak', '⭐ 4.8 rated', '🤝 14 partners'],
 };
 
-// Pre-seeded matches + chat threads.
+// Pre-seeded partners + chat threads. `sinceDays` = how long you've been paired.
+// message.day = days ago (0 = today). Times are shown as given.
 const SEED_MATCHES = [
   {
-    id: 'maya', sharedGoal: 'Running consistency', daysPaired: 12,
+    id: 'maya', sharedGoal: 'Running consistency', sinceDays: 12,
     lastActivity: 'Maya cheered your run 🎉', unread: 2,
     messages: [
-      { from: 'them', text: 'Morning! Did you get your run in? ☀️', t: '7:02 AM' },
-      { from: 'me', text: 'Just finished 5k 🙌 raining though', t: '7:40 AM' },
-      { from: 'them', text: 'Beast. I almost skipped, your text got me out 😅', t: '7:42 AM' },
-      { from: 'them', text: 'Same time tomorrow? Streak day 13 👀', t: '7:42 AM' },
+      { from: 'them', text: 'Morning! Did you get your run in? ☀️', t: '7:02 AM', day: 0 },
+      { from: 'me',   text: 'Just finished 5k 🙌 raining though', t: '7:40 AM', day: 0 },
+      { from: 'them', text: 'Beast. I almost skipped, your text got me out 😅', t: '7:42 AM', day: 0 },
+      { from: 'them', text: 'Same time tomorrow? Streak day 13 👀', t: '7:42 AM', day: 0 },
     ],
   },
   {
-    id: 'noor', sharedGoal: 'Career switch', daysPaired: 5,
+    id: 'noor', sharedGoal: 'Career switch', sinceDays: 5,
     lastActivity: 'You: sending you my case study', unread: 0,
     messages: [
-      { from: 'them', text: 'How did the mock interview go?', t: 'Yesterday' },
-      { from: 'me', text: 'Nervous but okay! Want to review my answers?', t: 'Yesterday' },
-      { from: 'them', text: 'Yes! Send them over, I’ll mark them up tonight 💪', t: 'Yesterday' },
+      { from: 'them', text: 'How did the mock interview go?', t: '6:10 PM', day: 1 },
+      { from: 'me',   text: 'Nervous but okay! Want to review my answers?', t: '6:32 PM', day: 1 },
+      { from: 'them', text: 'Yes! Send them over, I’ll mark them up tonight 💪', t: '6:33 PM', day: 1 },
     ],
   },
 ];
 
-// People who already liked you (instant match on connect).
+// People who already sent you a pair request (instant match when you connect).
 const LIKES_YOU = ['aisha', 'kabir', 'priya'];
 
-// Activity / notifications feed.
+// Seed activity feed. ageMin = minutes ago.
 const ACTIVITY = [
-  { kind: 'like',    icon: '💛', who: 'aisha', text: 'Aisha wants to pair up with you', time: '5m' },
-  { kind: 'rating',  icon: '⭐', who: 'maya',  text: 'Maya rated you 5★ — “so reliable”', time: '1h' },
-  { kind: 'checkin', icon: '✅', who: 'noor',  text: 'Noor checked in: 2 case studies done', time: '3h' },
-  { kind: 'streak',  icon: '🔥', who: null,    text: 'You’re on an 18-day streak. Check in to keep it!', time: '6h' },
-  { kind: 'like',    icon: '💛', who: 'kabir', text: 'Kabir wants to pair up with you', time: '1d' },
-  { kind: 'match',   icon: '🤝', who: 'priya', text: 'You and Priya could be a 90% match', time: '1d' },
+  { kind: 'like',    icon: '💛', who: 'aisha', text: 'Aisha wants to pair up with you', ageMin: 5 },
+  { kind: 'rating',  icon: '⭐', who: 'maya',  text: 'Maya rated you 5★ — “so reliable”', ageMin: 60 },
+  { kind: 'checkin', icon: '✅', who: 'noor',  text: 'Noor checked in: 2 case studies done', ageMin: 180 },
+  { kind: 'streak',  icon: '🔥', who: null,    text: 'You’re on a streak. Check in today to keep it!', ageMin: 360 },
+  { kind: 'like',    icon: '💛', who: 'kabir', text: 'Kabir wants to pair up with you', ageMin: 1440 },
+  { kind: 'match',   icon: '🤝', who: 'priya', text: 'You and Priya could be a 90% match', ageMin: 1500 },
 ];
 
-// Copy that changes with the selected tone (Design Lab variation).
+// Quick check-in chips, tailored to the shared goal category.
+const QUICK_CHIPS = {
+  fitness:  ['✅ Did my workout', '🙌 Crushed it today', '😅 Need a nudge', '📅 Same time tomorrow?'],
+  career:   ['✅ Shipped something today', '📝 Did my deep-work block', '😅 Stuck — need a push', '📅 Weekly check-in?'],
+  travel:   ['✅ Ticked off a prep task', '💰 Saved for the trip', '🗺️ Planned the next leg', '📅 Plan session tomorrow?'],
+  finance:  ['✅ No-spend day done', '💰 Moved money to savings', '😅 Almost impulse-bought', '📅 Compare notes Friday?'],
+  habits:   ['✅ Done for today', '🧘 Kept the habit', '😅 Nearly slipped', '📅 Same time tomorrow?'],
+  learning: ['✅ Practised today', '📚 Finished a lesson', '😅 Losing steam', '📅 Study session tomorrow?'],
+};
+
+// Partner reply engine: intent → possible replies. app.js picks the intent from your message.
+const REPLIES = {
+  done_hard: ['You finished even though it was tough — that’s the whole game 💪', 'Hard day AND you showed up? That’s the streak that matters 🔥', 'Respect. Tough sessions build the habit. Rest well tonight 💛'],
+  done:      ['Yesss 🙌 that’s the consistency I love', 'Logged and celebrated 🎉 Streak alive!', 'Proud of you. Same time tomorrow?', 'That’s a win. Stack another one tomorrow 💪'],
+  hard:      ['Tough days count double. You still showed up 💛', 'Totally normal — the hard ones build the habit. Go easy tonight?', 'Hey, you got through it. That’s the whole point 🤝', 'Want to make tomorrow a lighter session? Easy win to keep the streak.'],
+  skip:      ['No guilt — but let’s not make it two. Tomorrow 7am? ⏰', 'Happens! Want me to text you a reminder tomorrow morning?', 'One miss doesn’t break a habit. Two starts to. I’ve got you 👊'],
+  nudge:     ['You’ve got this. 10 minutes — just start. Text me when done ✅', 'Okay: shoes on, door open, go. I’ll check back in 30 🙂', 'Nudge delivered 🔔 Future you says thanks.'],
+  question:  ['Good question — I’d say yes, as long as it keeps you consistent 🙂', 'Honestly? Try it for a week and we compare notes.', 'Let’s decide together on our next check-in 👍'],
+  plan:      ['Deal — same time tomorrow 📅', 'Locked in. I’ll text first if you don’t 😄', 'Yes! Let’s do it. Streak day +1 👀'],
+  thanks:    ['Anytime — that’s what partners are for 🤝', 'We’re in this together 💛'],
+  greet:     ['Hey hey 👋 how did today go?', 'Hi! Did you get your session in?'],
+  default:   ['Love that 🙌', 'Noted — keep me posted 👀', 'On it too — accountability works 💪', 'Let’s keep each other honest 🔥'],
+};
+
+// Reasons offered when reporting a partner (safety).
+const REPORT_REASONS = ['Inappropriate messages', 'Fake profile or spam', 'Harassment or bullying', 'Not here for goals', 'Something else'];
+
+// Achievements. `metric` + `min` are evaluated against live stats in app.js.
+const ACHIEVEMENTS = [
+  { id: 'first',    emoji: '🤝', title: 'First Tandem',    desc: 'Pair with your first partner',   metric: 'partners', min: 1 },
+  { id: 'circle',   emoji: '💛', title: 'Circle of three', desc: 'Have 3 active partners',          metric: 'partners', min: 3 },
+  { id: 'streak7',  emoji: '🔥', title: 'One week strong', desc: 'Keep a 7-day check-in streak',    metric: 'streak',   min: 7 },
+  { id: 'streak30', emoji: '🏆', title: 'Thirty days',     desc: 'Keep a 30-day check-in streak',   metric: 'streak',   min: 30 },
+  { id: 'rater',    emoji: '⭐', title: 'Fair judge',      desc: 'Rate a partner',                  metric: 'ratings',  min: 1 },
+  { id: 'goals3',   emoji: '🎯', title: 'Multi-goal',      desc: 'Track 3 goals at once',           metric: 'goals',    min: 3 },
+  { id: 'checkins', emoji: '✅', title: 'Fifty check-ins', desc: 'Log 50 check-ins in total',       metric: 'checkins', min: 50 },
+];
+
+// Copy that changes with the selected voice (Settings → Voice).
 const TONE_COPY = {
   playful: {
     discoverTitle: 'Find your goal twin',
@@ -261,4 +309,4 @@ const TONE_COPY = {
   },
 };
 
-window.TANDEM = { CATEGORIES, AVATAR_GRADIENTS, PEOPLE, REVIEWS, ME, SEED_MATCHES, LIKES_YOU, ACTIVITY, TONE_COPY };
+window.TANDEM = { CATEGORIES, AVATAR_GRADIENTS, NEIGHBORHOODS, PEOPLE, REVIEWS, ME, SEED_MATCHES, LIKES_YOU, ACTIVITY, QUICK_CHIPS, REPLIES, REPORT_REASONS, ACHIEVEMENTS, TONE_COPY };

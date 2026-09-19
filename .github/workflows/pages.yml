@@ -1,10 +1,9 @@
 name: Deploy to GitHub Pages
 
+# Manual-only: run from the Actions tab once GitHub Pages is enabled for the
+# repository (Settings → Pages → Source: GitHub Actions). Kept off `push` so
+# the pull request stays green while Vercel handles previews.
 on:
-  push:
-    branches:
-      - main
-      - claude/wizardly-cori-yz3ehy
   workflow_dispatch:
 
 permissions:
@@ -12,7 +11,6 @@ permissions:
   pages: write
   id-token: write
 
-# Allow one concurrent deployment, don't cancel in-progress production runs
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -30,7 +28,6 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
-          # Create the Pages site automatically if it isn't set up yet
           enablement: true
 
       - name: Upload static site
