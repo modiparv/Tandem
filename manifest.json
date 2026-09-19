@@ -1,0 +1,19 @@
+{
+  "name": "Tandem — match your goals",
+  "short_name": "Tandem",
+  "description": "Match with people nearby chasing the same goals. Pair up as accountability partners, check in daily, and rate each other.",
+  "id": "/",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF6EF",
+  "theme_color": "#FF6B5C",
+  "categories": ["lifestyle", "health", "productivity", "social"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
