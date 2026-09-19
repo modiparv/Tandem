@@ -842,8 +842,6 @@ textarea.text-in { resize: vertical; min-height: 78px; line-height: 1.45; }
 .onb-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
 .onb-nav .skip { margin-top: 0; }
 .onb-nav .btn { min-width: 150px; }
-.onb-locate { width: 100%; border: 1.5px dashed rgba(255,255,255,.7); background: rgba(255,255,255,.14); color: #fff; border-radius: var(--r-md); padding: 13px; font-family: var(--font-body); font-weight: 800; font-size: 14px; cursor: pointer; margin-top: 18px; }
-.onb-locate:disabled { cursor: default; background: rgba(255,255,255,.28); }
 .onb-summary { display: flex; flex-direction: column; gap: 10px; text-align: left; margin: 22px 0 24px; }
 .onb-summary div { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25); border-radius: var(--r-md); padding: 12px 14px; font-size: 14px; font-weight: 700; }
 .onb-summary span { font-size: 20px; }
