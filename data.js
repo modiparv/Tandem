@@ -20,9 +20,6 @@ const AVATAR_GRADIENTS = [
   ['#FF6F91', '#FFC75F'], ['#F9844A', '#FEE440'],
 ];
 
-// Neighbourhoods offered in onboarding / profile editing (Mumbai demo city).
-const NEIGHBORHOODS = ['Bandra West', 'Bandra East', 'Andheri', 'Juhu', 'Khar', 'Powai', 'Lower Parel', 'Worli', 'Dadar', 'Colaba'];
-
 // Candidate pool. distance in km. rating /5, ratingCount = past partners who rated them.
 // active = recency ('now' | '2h' | 'today' | 'yesterday'). checkedInToday drives the shared-streak indicator.
 const PEOPLE = [
@@ -309,4 +306,4 @@ const TONE_COPY = {
   },
 };
 
-window.TANDEM = { CATEGORIES, AVATAR_GRADIENTS, NEIGHBORHOODS, PEOPLE, REVIEWS, ME, SEED_MATCHES, LIKES_YOU, ACTIVITY, QUICK_CHIPS, REPLIES, REPORT_REASONS, ACHIEVEMENTS, TONE_COPY };
+window.TANDEM = { CATEGORIES, AVATAR_GRADIENTS, PEOPLE, REVIEWS, ME, SEED_MATCHES, LIKES_YOU, ACTIVITY, QUICK_CHIPS, REPLIES, REPORT_REASONS, ACHIEVEMENTS, TONE_COPY };

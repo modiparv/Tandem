@@ -9,7 +9,7 @@
 (function () {
   'use strict';
   const T = window.TANDEM;
-  const { CATEGORIES, AVATAR_GRADIENTS, NEIGHBORHOODS, PEOPLE, REVIEWS, ME, SEED_MATCHES, LIKES_YOU, ACTIVITY, QUICK_CHIPS, REPLIES, REPORT_REASONS, ACHIEVEMENTS, TONE_COPY } = T;
+  const { CATEGORIES, AVATAR_GRADIENTS, PEOPLE, REVIEWS, ME, SEED_MATCHES, LIKES_YOU, ACTIVITY, QUICK_CHIPS, REPLIES, REPORT_REASONS, ACHIEVEMENTS, TONE_COPY } = T;
 
   /* ---------- tiny helpers ---------- */
   const $ = (s, r = document) => r.querySelector(s);
@@ -948,7 +948,7 @@
      ONBOARDING — 5 short steps
      =================================================================== */
   function startOnboarding() {
-    const draft = { name: state.me.name === 'You' ? '' : state.me.name, cats: new Set(state.myCats), hood: state.me.neighborhood, step: 0 };
+    const draft = { name: state.me.name === 'You' ? '' : state.me.name, cats: new Set(state.myCats), hood: state.me.neighborhood === ME.neighborhood ? '' : state.me.neighborhood, step: 0 };
     const cats = Object.entries(CATEGORIES);
     const steps = [
       () => `<div class="onb-logo">T</div><h1>Tandem</h1><div class="tagline">Goals are better with company. Match with people near you chasing the same thing.</div>
@@ -965,8 +965,7 @@
         <div class="onb-field"><div class="onb-cats" id="onbCats">${cats.map(([k, c]) => `<button data-cat="${k}" class="${draft.cats.has(k) ? 'on' : ''}" aria-pressed="${draft.cats.has(k)}">${c.emoji} ${c.short}</button>`).join('')}</div></div>
         <div class="onb-nav"><button class="skip" data-onb="back">Back</button><button class="btn" data-onb="next" id="onbNext">Continue</button></div>`,
       () => `<div class="onb-kicker">Step 3 of 4</div><h1 class="sm">Where are you based?</h1><div class="tagline">We only show people nearby, so you can actually meet up.</div>
-        <button class="onb-locate" id="onbLocate">📍 Use my current location</button>
-        <div class="onb-field"><div class="onb-cats" id="onbHood">${NEIGHBORHOODS.map((h) => `<button data-hood="${esc(h)}" class="${draft.hood === h ? 'on' : ''}">${esc(h)}</button>`).join('')}</div></div>
+        <div class="onb-field"><label for="onbHood">Your area or city</label><input class="onb-input" id="onbHood" placeholder="e.g. Bandra West, Mumbai" value="${esc(draft.hood)}" maxlength="40" autocomplete="address-level2" /></div>
         <div class="onb-nav"><button class="skip" data-onb="back">Back</button><button class="btn" data-onb="next" id="onbNext">Continue</button></div>`,
       () => `<div class="onb-kicker">Step 4 of 4</div><div class="onb-logo">${mono(draft.name || 'You')}</div><h1 class="sm">You're set, ${esc(draft.name || 'friend')}</h1>
         <div class="onb-summary">
@@ -981,17 +980,19 @@
       overlay.innerHTML = `<div class="onb-scrim"><div class="onb" role="dialog" aria-modal="true" aria-label="Welcome to Tandem">
         <div class="onb-dots" aria-hidden="true">${steps.map((_, i) => `<i class="${i === draft.step ? 'on' : i < draft.step ? 'done' : ''}"></i>`).join('')}</div>${steps[draft.step]()}</div></div>`;
       const inp = $('#onbName'); if (inp) { inp.focus(); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') next(); }); }
+      const hood = $('#onbHood'); if (hood) { hood.focus(); hood.addEventListener('keydown', (e) => { if (e.key === 'Enter') next(); }); }
       const oc = $('#onbCats'); if (oc) oc.addEventListener('click', (e) => { const b = e.target.closest('[data-cat]'); if (!b) return; const k = b.dataset.cat; draft.cats.has(k) ? draft.cats.delete(k) : draft.cats.add(k); b.classList.toggle('on', draft.cats.has(k)); b.setAttribute('aria-pressed', draft.cats.has(k)); });
-      const oh = $('#onbHood'); if (oh) oh.addEventListener('click', (e) => { const b = e.target.closest('[data-hood]'); if (!b) return; draft.hood = b.dataset.hood; oh.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x.dataset.hood === draft.hood)); });
-      const loc = $('#onbLocate'); if (loc) loc.addEventListener('click', () => { loc.textContent = 'Locating…'; loc.disabled = true; setTimeout(() => { draft.hood = 'Bandra West'; loc.textContent = '✓ Located · Bandra West'; oh.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x.dataset.hood === draft.hood)); }, 900); });
       overlay.querySelectorAll('[data-onb]').forEach((b) => b.addEventListener('click', () => ({ next, back, finish })[b.dataset.onb]()));
     };
+    const capture = () => { const n = $('#onbName'); if (n) draft.name = n.value.trim(); const h = $('#onbHood'); if (h) draft.hood = h.value.trim(); };
     const next = () => {
-      if (draft.step === 1) { draft.name = ($('#onbName').value || '').trim(); if (!draft.name) return toast('Tell us your name 🙂'); }
+      capture();
+      if (draft.step === 1 && !draft.name) return toast('Tell us your name 🙂');
       if (draft.step === 2 && !draft.cats.size) return toast('Pick at least one goal');
+      if (draft.step === 3 && !draft.hood) return toast('Type your area or city 📍');
       draft.step = Math.min(steps.length - 1, draft.step + 1); paint();
     };
-    const back = () => { draft.step = Math.max(0, draft.step - 1); paint(); };
+    const back = () => { capture(); draft.step = Math.max(0, draft.step - 1); paint(); };
     const finish = () => {
       state.me.name = draft.name || 'You'; state.me.neighborhood = draft.hood;
       state.myCats = new Set([...draft.cats]); state.goals.forEach((g) => state.myCats.add(g.cat));
@@ -1001,11 +1002,11 @@
   }
 
   function openEditProfile() {
-    const cats = Object.entries(CATEGORIES); const sel = new Set(state.myCats); let hood = state.me.neighborhood;
+    const cats = Object.entries(CATEGORIES); const sel = new Set(state.myCats);
     sheet(`${sheetTop('Edit profile')}
       <div class="fg"><div class="fg-label">Name</div><input class="text-in" id="epName" value="${esc(state.me.name)}" maxlength="20" /></div>
       <div class="fg two"><div><div class="fg-label">Age</div><input class="text-in" id="epAge" type="number" min="18" max="99" value="${state.me.age}" /></div>
-        <div><div class="fg-label">Neighbourhood</div><select class="text-in" id="epHood">${NEIGHBORHOODS.map((h) => `<option ${h === hood ? 'selected' : ''}>${esc(h)}</option>`).join('')}</select></div></div>
+        <div><div class="fg-label">Area / city</div><input class="text-in" id="epHood" value="${esc(state.me.neighborhood)}" maxlength="40" placeholder="e.g. Bandra West, Mumbai" /></div></div>
       <div class="fg"><div class="fg-label">Headline</div><input class="text-in" id="epHead" value="${esc(state.me.headline)}" maxlength="70" placeholder="One line about what you're working on" /></div>
       <div class="fg"><div class="fg-label">About you</div><textarea class="text-in" id="epBio" rows="3" maxlength="220" placeholder="What kind of partner are you?">${esc(state.me.bio)}</textarea></div>
       <div class="fg"><div class="fg-label">Goal areas</div><div class="chips" id="epCats">${cats.map(([k, c]) => `<button data-cat="${k}" class="chip ${sel.has(k) ? 'on' : ''}">${c.emoji} ${c.short}</button>`).join('')}</div></div>
@@ -1015,7 +1016,7 @@
       const name = $('#epName').value.trim(); if (!name) return toast('Name can’t be empty');
       const age = Math.max(18, Math.min(99, +$('#epAge').value || state.me.age));
       if (!sel.size) return toast('Keep at least one goal area');
-      state.me = { name, age, neighborhood: $('#epHood').value, headline: $('#epHead').value.trim() || ME.headline, bio: $('#epBio').value.trim() || ME.bio };
+      state.me = { name, age, neighborhood: $('#epHood').value.trim() || state.me.neighborhood, headline: $('#epHead').value.trim() || ME.headline, bio: $('#epBio').value.trim() || ME.bio };
       state.myCats = sel; state.goals.forEach((g) => state.myCats.add(g.cat));
       persist(); closeOverlay(); render(); toast('Profile updated');
     });

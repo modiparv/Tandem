@@ -40,7 +40,7 @@ This repository is a complete, dependency-free web app: open `index.html` and it
 ## The user journey
 
 ### 1. Onboarding (four short steps)
-**Welcome → Name → Goals → Location → Ready.** Progress dots, back navigation, validation (a name and at least one goal are required), and a one-tap *Use my current location*. The final step summarises what you chose. Everything is editable later from Profile.
+**Welcome → Name → Goals → Location → Ready.** Progress dots, back navigation, and validation: a name, at least one goal, and your area or city are required. You type your location; there is no permission prompt. The final step summarises what you chose. Everything is editable later from Profile.
 
 ### 2. Discover
 The top card shows distance and neighbourhood, whether the person is active now, their rating and how many partners rated them, a **goal-match percentage**, their headline, bio, the goal you share ("You both want to run a 10K+"), and personality tags. A **💛 Likes you** badge appears when someone has already sent you a request.
